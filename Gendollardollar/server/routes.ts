@@ -1,121 +1,160 @@
-import { Router } from "express";
-import { MemStorage } from "./storage";
-import { resourceFiltersSchema, insertResourceSchema } from "@shared/schema";
-import { z } from "zod";
 
-const router = Router();
-const storage = new MemStorage();
+import { Express } from 'express';
+import { db } from './db.js';
+import { users, tradingAccounts, positions, notifications, educationalResources } from '../shared/schema.js';
+import { eq, desc, and, or, ilike, count } from 'drizzle-orm';
 
-// GET /api/resources - Get paginated resources with filters
-router.get("/api/resources", async (req, res) => {
-  try {
-    const filters = resourceFiltersSchema.parse({
-      search: req.query.search || undefined,
-      skillLevel: req.query.skillLevel || undefined,
-      category: req.query.category || undefined,
-      resourceType: req.query.resourceType || undefined,
-      page: req.query.page ? parseInt(req.query.page as string) : 1,
-      limit: req.query.limit ? parseInt(req.query.limit as string) : 12,
-    });
-
-    const result = await storage.getResources(filters);
-    res.json(result);
-  } catch (error) {
-    console.error("Error fetching resources:", error);
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ error: "Invalid filter parameters", details: error.errors });
-    } else {
-      res.status(500).json({ error: "Internal server error" });
+export function registerRoutes(app: Express) {
+  
+  // Test route
+  app.get('/api/test', async (req, res) => {
+    try {
+      res.json({ 
+        message: 'API is working!', 
+        timestamp: new Date().toISOString(),
+        database: 'Connected'
+      });
+    } catch (error) {
+      console.error('Test route error:', error);
+      res.status(500).json({ error: 'Test route failed' });
     }
-  }
-});
+  });
 
-// GET /api/resources/featured - Get featured resources
-router.get("/api/resources/featured", async (req, res) => {
-  try {
-    const featuredResources = await storage.getFeaturedResources();
-    res.json(featuredResources);
-  } catch (error) {
-    console.error("Error fetching featured resources:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// GET /api/resources/:id - Get single resource
-router.get("/api/resources/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const resource = await storage.getResourceById(id);
-    
-    if (!resource) {
-      return res.status(404).json({ error: "Resource not found" });
+  // Database health check
+  app.get('/api/db-health', async (req, res) => {
+    try {
+      const result = await db.select({ count: count() }).from(users);
+      res.json({ 
+        status: 'healthy', 
+        userCount: result[0].count,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Database health check failed:', error);
+      res.status(500).json({ error: 'Database connection failed' });
     }
-    
-    res.json(resource);
-  } catch (error) {
-    console.error("Error fetching resource:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  });
 
-// POST /api/resources - Create new resource
-router.post("/api/resources", async (req, res) => {
-  try {
-    const resourceData = insertResourceSchema.parse(req.body);
-    const newResource = await storage.createResource(resourceData);
-    res.status(201).json(newResource);
-  } catch (error) {
-    console.error("Error creating resource:", error);
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ error: "Invalid resource data", details: error.errors });
-    } else {
-      res.status(500).json({ error: "Internal server error" });
-    }
-  }
-});
+  // Educational Resources Routes
+  app.get('/api/educational-resources', async (req, res) => {
+    try {
+      const { page = '1', limit = '10', search = '', skillLevel, category } = req.query;
+      const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+      
+      let whereConditions = [];
+      
+      if (search) {
+        whereConditions.push(
+          or(
+            ilike(educationalResources.title, `%${search}%`),
+            ilike(educationalResources.description, `%${search}%`)
+          )
+        );
+      }
+      
+      if (skillLevel) {
+        whereConditions.push(eq(educationalResources.skillLevel, skillLevel as string));
+      }
+      
+      if (category) {
+        whereConditions.push(eq(educationalResources.category, category as string));
+      }
 
-// PUT /api/resources/:id - Update resource
-router.put("/api/resources/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updateData = insertResourceSchema.partial().parse(req.body);
-    const updatedResource = await storage.updateResource(id, updateData);
-    
-    if (!updatedResource) {
-      return res.status(404).json({ error: "Resource not found" });
-    }
-    
-    res.json(updatedResource);
-  } catch (error) {
-    console.error("Error updating resource:", error);
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ error: "Invalid resource data", details: error.errors });
-    } else {
-      res.status(500).json({ error: "Internal server error" });
-    }
-  }
-});
+      const resources = await db
+        .select()
+        .from(educationalResources)
+        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+        .orderBy(desc(educationalResources.createdAt))
+        .limit(parseInt(limit as string))
+        .offset(offset);
 
-// DELETE /api/resources/:id - Delete resource
-router.delete("/api/resources/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await storage.deleteResource(id);
-    
-    if (!deleted) {
-      return res.status(404).json({ error: "Resource not found" });
-    }
-    
-    res.status(204).send();
-  } catch (error) {
-    console.error("Error deleting resource:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+      const totalCount = await db
+        .select({ count: count() })
+        .from(educationalResources)
+        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
 
-export function registerRoutes(app: any) {
-  app.use(router);
-  return app;
+      res.json({
+        resources,
+        pagination: {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+          total: totalCount[0].count,
+          totalPages: Math.ceil(totalCount[0].count / parseInt(limit as string))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching educational resources:', error);
+      res.status(500).json({ error: 'Failed to fetch educational resources' });
+    }
+  });
+
+  // Trading accounts routes
+  app.get('/api/trading-accounts', async (req, res) => {
+    try {
+      const accounts = await db
+        .select()
+        .from(tradingAccounts)
+        .orderBy(desc(tradingAccounts.createdAt));
+      
+      res.json({ accounts });
+    } catch (error) {
+      console.error('Error fetching trading accounts:', error);
+      res.status(500).json({ error: 'Failed to fetch trading accounts' });
+    }
+  });
+
+  // Positions routes
+  app.get('/api/positions', async (req, res) => {
+    try {
+      const activePositions = await db
+        .select()
+        .from(positions)
+        .where(eq(positions.status, 'open'))
+        .orderBy(desc(positions.openTime));
+      
+      res.json({ positions: activePositions });
+    } catch (error) {
+      console.error('Error fetching positions:', error);
+      res.status(500).json({ error: 'Failed to fetch positions' });
+    }
+  });
+
+  // Notifications routes
+  app.get('/api/notifications', async (req, res) => {
+    try {
+      const recentNotifications = await db
+        .select()
+        .from(notifications)
+        .orderBy(desc(notifications.createdAt))
+        .limit(50);
+      
+      res.json({ notifications: recentNotifications });
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+  });
+
+  // System stats
+  app.get('/api/stats', async (req, res) => {
+    try {
+      const [usersCount, accountsCount, positionsCount, notificationsCount] = await Promise.all([
+        db.select({ count: count() }).from(users),
+        db.select({ count: count() }).from(tradingAccounts),
+        db.select({ count: count() }).from(positions).where(eq(positions.status, 'open')),
+        db.select({ count: count() }).from(notifications)
+      ]);
+
+      res.json({
+        users: usersCount[0].count,
+        tradingAccounts: accountsCount[0].count,
+        activePositions: positionsCount[0].count,
+        notifications: notificationsCount[0].count,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      res.status(500).json({ error: 'Failed to fetch stats' });
+    }
+  });
 }
-
-export default router;
