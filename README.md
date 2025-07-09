@@ -52,4 +52,3 @@ A comprehensive trading signal system that integrates with Bybit's real-time dat
 2. **Install dependencies**
    ```bash
    npm install
-   
