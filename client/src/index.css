@@ -1,0 +1,228 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(222, 84%, 4.9%);
+  --foreground: hsl(210, 40%, 98%);
+  --card: hsl(222, 84%, 4.9%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --popover: hsl(222, 84%, 4.9%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --primary: hsl(221, 83%, 53%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(217, 32%, 17%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --muted: hsl(215, 28%, 17%);
+  --muted-foreground: hsl(215, 20%, 65%);
+  --accent: hsl(215, 28%, 17%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 62%, 30%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --border: hsl(215, 28%, 17%);
+  --input: hsl(215, 28%, 17%);
+  --ring: hsl(221, 83%, 53%);
+  --radius: 0.5rem;
+  
+  /* Custom colors for trading dashboard */
+  --dark-slate: hsl(215, 28%, 17%);
+  --darker-slate: hsl(222, 84%, 4.9%);
+  --slate-gray: hsl(215, 20%, 65%);
+  --success-green: hsl(142, 76%, 36%);
+  --warning-orange: hsl(43, 96%, 56%);
+  --error-red: hsl(0, 84%, 60%);
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--darker-slate));
+  color: hsl(var(--foreground));
+  font-family: "Inter", sans-serif;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--darker-slate));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--dark-slate));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted));
+}
+
+/* Trading signal status colors */
+.signal-buy {
+  color: hsl(var(--success-green));
+  background-color: hsl(var(--success-green) / 0.1);
+}
+
+.signal-sell {
+  color: hsl(var(--error-red));
+  background-color: hsl(var(--error-red) / 0.1);
+}
+
+.signal-hold {
+  color: hsl(var(--warning-orange));
+  background-color: hsl(var(--warning-orange) / 0.1);
+}
+
+/* Status indicators */
+.status-active {
+  color: hsl(var(--success-green));
+}
+
+.status-inactive {
+  color: hsl(var(--error-red));
+}
+
+.status-warning {
+  color: hsl(var(--warning-orange));
+}
+
+/* Animated pulse for real-time updates */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Price change animations */
+.price-up {
+  color: hsl(var(--success-green));
+  animation: flash-green 0.5s ease-out;
+}
+
+.price-down {
+  color: hsl(var(--error-red));
+  animation: flash-red 0.5s ease-out;
+}
+
+@keyframes flash-green {
+  0% {
+    background-color: hsl(var(--success-green) / 0.3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes flash-red {
+  0% {
+    background-color: hsl(var(--error-red) / 0.3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Loading states */
+.loading-shimmer {
+  background: linear-gradient(90deg, 
+    hsl(var(--muted)) 0%, 
+    hsl(var(--muted-foreground) / 0.1) 50%, 
+    hsl(var(--muted)) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Console-like log styling */
+.log-entry {
+  font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.log-info {
+  color: hsl(var(--success-green));
+}
+
+.log-debug {
+  color: hsl(var(--primary));
+}
+
+.log-warn {
+  color: hsl(var(--warning-orange));
+}
+
+.log-error {
+  color: hsl(var(--error-red));
+}
+
+/* Responsive design helpers */
+@media (max-width: 768px) {
+  .mobile-hidden {
+    display: none;
+  }
+}
+
+/* Glass effect for cards */
+.glass-card {
+  background: hsl(var(--card) / 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.2);
+}
+
+/* Gradient borders */
+.gradient-border {
+  position: relative;
+  background: hsl(var(--card));
+  border-radius: var(--radius);
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: var(--radius);
+  padding: 1px;
+  background: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--success-green)));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: subtract;
+}
