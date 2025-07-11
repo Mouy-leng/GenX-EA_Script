@@ -1,202 +1,379 @@
 
 import { Express } from 'express';
 import { db } from './db.js';
-import { 
-  users, 
-  tradingAccounts, 
-  positions, 
-  tradingBots, 
-  marketData, 
-  economicNews,
-  notifications,
-  discordSignals 
-} from '../shared/schema.js';
-import { desc, eq, and, gte } from 'drizzle-orm';
-import { broadcast } from './index.js';
+import { users, tradingAccounts, positions, notifications, educationalResources } from '../shared/schema.js';
+import { eq, desc, and, or, ilike, count } from 'drizzle-orm';
 
-export function setupRoutes(app: Express) {
+export function registerRoutes(app: Express) {
   
-  // Portfolio Analytics
-  app.get('/api/analytics/portfolio', async (req, res) => {
+  // Test route
+  app.get('/api/test', async (req, res) => {
     try {
-      const [totalBalance, totalPnl, activePositionsCount] = await Promise.all([
-        db.select().from(tradingAccounts),
-        db.select().from(positions).where(eq(positions.status, 'open')),
-        db.select().from(positions).where(eq(positions.status, 'open'))
-      ]);
+      res.json({ 
+        message: 'API is working!', 
+        timestamp: new Date().toISOString(),
+        database: 'Connected'
+      });
+    } catch (error) {
+      console.error('Test route error:', error);
+      res.status(500).json({ error: 'Test route failed' });
+    }
+  });
 
-      const balance = totalBalance.reduce((sum, account) => sum + parseFloat(account.balance), 0);
-      const pnl = totalPnl.reduce((sum, position) => sum + parseFloat(position.unrealizedPnl || '0'), 0);
+  // Database health check
+  app.get('/api/db-health', async (req, res) => {
+    try {
+      const result = await db.select({ count: count() }).from(users);
+      res.json({ 
+        status: 'healthy', 
+        userCount: result[0].count,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Database health check failed:', error);
+      res.status(500).json({ error: 'Database connection failed' });
+    }
+  });
+
+  // Educational Resources Routes
+  app.get('/api/educational-resources', async (req, res) => {
+    try {
+      const { page = '1', limit = '10', search = '', skillLevel, category } = req.query;
+      const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+      
+      let whereConditions = [];
+      
+      if (search) {
+        whereConditions.push(
+          or(
+            ilike(educationalResources.title, `%${search}%`),
+            ilike(educationalResources.description, `%${search}%`)
+          )
+        );
+      }
+      
+      if (skillLevel) {
+        whereConditions.push(eq(educationalResources.skillLevel, skillLevel as string));
+      }
+      
+      if (category) {
+        whereConditions.push(eq(educationalResources.category, category as string));
+      }
+
+      const resources = await db
+        .select()
+        .from(educationalResources)
+        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+        .orderBy(desc(educationalResources.createdAt))
+        .limit(parseInt(limit as string))
+        .offset(offset);
+
+      const totalCount = await db
+        .select({ count: count() })
+        .from(educationalResources)
+        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
 
       res.json({
-        totalBalance: balance,
-        totalPnl: pnl,
-        activePositions: activePositionsCount.length,
-        performance: {
-          daily: 2.45,
-          weekly: 12.8,
-          monthly: 34.2
+        resources,
+        pagination: {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+          total: totalCount[0].count,
+          totalPages: Math.ceil(totalCount[0].count / parseInt(limit as string))
         }
       });
     } catch (error) {
-      console.error('Portfolio analytics error:', error);
-      res.status(500).json({ error: 'Failed to fetch portfolio data' });
+      console.error('Error fetching educational resources:', error);
+      res.status(500).json({ error: 'Failed to fetch educational resources' });
     }
   });
 
-  // Active Positions
-  app.get('/api/positions/active', async (req, res) => {
-    try {
-      const activePositions = await db
-        .select()
-        .from(positions)
-        .where(eq(positions.status, 'open'))
-        .orderBy(desc(positions.createdAt))
-        .limit(50);
-
-      res.json(activePositions);
-    } catch (error) {
-      console.error('Active positions error:', error);
-      res.status(500).json({ error: 'Failed to fetch active positions' });
-    }
-  });
-
-  // Trading Bots
-  app.get('/api/bots', async (req, res) => {
-    try {
-      const bots = await db
-        .select()
-        .from(tradingBots)
-        .orderBy(desc(tradingBots.createdAt));
-
-      res.json(bots);
-    } catch (error) {
-      console.error('Trading bots error:', error);
-      res.status(500).json({ error: 'Failed to fetch trading bots' });
-    }
-  });
-
-  // Start/Stop Trading Bot
-  app.post('/api/bots/:id/:action', async (req, res) => {
-    try {
-      const { id, action } = req.params;
-      
-      if (!['start', 'stop'].includes(action)) {
-        return res.status(400).json({ error: 'Invalid action' });
-      }
-
-      const status = action === 'start' ? 'running' : 'stopped';
-      
-      await db
-        .update(tradingBots)
-        .set({ 
-          status,
-          updatedAt: new Date()
-        })
-        .where(eq(tradingBots.id, parseInt(id)));
-
-      // Broadcast update to connected clients
-      broadcast({
-        type: 'bot_status_update',
-        botId: id,
-        status,
-        timestamp: new Date().toISOString()
-      });
-
-      res.json({ success: true, status });
-    } catch (error) {
-      console.error('Bot action error:', error);
-      res.status(500).json({ error: 'Failed to update bot status' });
-    }
-  });
-
-  // Market Data
-  app.get('/api/market', async (req, res) => {
-    try {
-      const marketData = await db
-        .select()
-        .from(marketData as any)
-        .orderBy(desc((marketData as any).timestamp))
-        .limit(100);
-
-      res.json(marketData);
-    } catch (error) {
-      console.error('Market data error:', error);
-      res.status(500).json({ error: 'Failed to fetch market data' });
-    }
-  });
-
-  // Economic News
-  app.get('/api/news', async (req, res) => {
-    try {
-      const news = await db
-        .select()
-        .from(economicNews)
-        .orderBy(desc(economicNews.publishedAt))
-        .limit(20);
-
-      res.json(news);
-    } catch (error) {
-      console.error('News error:', error);
-      res.status(500).json({ error: 'Failed to fetch news' });
-    }
-  });
-
-  // Notifications
-  app.get('/api/notifications', async (req, res) => {
-    try {
-      const notifications = await db
-        .select()
-        .from(notifications)
-        .orderBy(desc(notifications.createdAt))
-        .limit(50);
-
-      res.json(notifications);
-    } catch (error) {
-      console.error('Notifications error:', error);
-      res.status(500).json({ error: 'Failed to fetch notifications' });
-    }
-  });
-
-  // Discord Analytics
-  app.get('/api/discord/analytics', async (req, res) => {
-    try {
-      const signals = await db
-        .select()
-        .from(discordSignals)
-        .orderBy(desc(discordSignals.createdAt))
-        .limit(100);
-
-      const analytics = {
-        totalSignals: signals.length,
-        todaySignals: signals.filter(s => 
-          new Date(s.createdAt).toDateString() === new Date().toDateString()
-        ).length,
-        signalTypes: signals.reduce((acc, signal) => {
-          acc[signal.signalType] = (acc[signal.signalType] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
-      };
-
-      res.json(analytics);
-    } catch (error) {
-      console.error('Discord analytics error:', error);
-      res.status(500).json({ error: 'Failed to fetch Discord analytics' });
-    }
-  });
-
-  // Trading Accounts
-  app.get('/api/accounts', async (req, res) => {
+  // Trading accounts routes
+  app.get('/api/trading-accounts', async (req, res) => {
     try {
       const accounts = await db
         .select()
         .from(tradingAccounts)
         .orderBy(desc(tradingAccounts.createdAt));
-
-      res.json(accounts);
+      
+      res.json({ accounts });
     } catch (error) {
-      console.error('Accounts error:', error);
+      console.error('Error fetching trading accounts:', error);
       res.status(500).json({ error: 'Failed to fetch trading accounts' });
+    }
+  });
+
+  // Positions routes
+  app.get('/api/positions', async (req, res) => {
+    try {
+      const activePositions = await db
+        .select()
+        .from(positions)
+        .where(eq(positions.status, 'open'))
+        .orderBy(desc(positions.openTime));
+      
+      res.json({ positions: activePositions });
+    } catch (error) {
+      console.error('Error fetching positions:', error);
+      res.status(500).json({ error: 'Failed to fetch positions' });
+    }
+  });
+
+  // Notifications routes
+  app.get('/api/notifications', async (req, res) => {
+    try {
+      const recentNotifications = await db
+        .select()
+        .from(notifications)
+        .orderBy(desc(notifications.createdAt))
+        .limit(50);
+      
+      res.json({ notifications: recentNotifications });
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+  });
+
+  // System stats
+  app.get('/api/stats', async (req, res) => {
+    try {
+      const [usersCount, accountsCount, positionsCount, notificationsCount] = await Promise.all([
+        db.select({ count: count() }).from(users),
+        db.select({ count: count() }).from(tradingAccounts),
+        db.select({ count: count() }).from(positions).where(eq(positions.status, 'open')),
+        db.select({ count: count() }).from(notifications)
+      ]);
+
+      res.json({
+        users: usersCount[0].count,
+        tradingAccounts: accountsCount[0].count,
+        activePositions: positionsCount[0].count,
+        notifications: notificationsCount[0].count,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      res.status(500).json({ error: 'Failed to fetch stats' });
+    }
+  });
+
+  // MT4/5 EA Connection Management
+  const eaConnections = new Map();
+  const pendingSignals = new Map();
+
+  // Register EA connection
+  app.post('/api/mt45/register', async (req, res) => {
+    try {
+      const { eaName, connectionId, accountNumber, symbol, timeframe } = req.body;
+      
+      eaConnections.set(connectionId, {
+        eaName,
+        connectionId,
+        accountNumber,
+        symbol,
+        timeframe,
+        status: 'connected',
+        lastHeartbeat: new Date(),
+        connectedAt: new Date()
+      });
+
+      console.log(`EA registered: ${eaName} (${connectionId})`);
+      
+      res.json({ 
+        success: true, 
+        message: 'EA registered successfully',
+        connectionId 
+      });
+    } catch (error) {
+      console.error('Error registering EA:', error);
+      res.status(500).json({ error: 'Failed to register EA' });
+    }
+  });
+
+  // Unregister EA connection
+  app.post('/api/mt45/unregister', async (req, res) => {
+    try {
+      const { connectionId } = req.body;
+      
+      if (eaConnections.has(connectionId)) {
+        eaConnections.delete(connectionId);
+        pendingSignals.delete(connectionId);
+        console.log(`EA unregistered: ${connectionId}`);
+      }
+      
+      res.json({ success: true, message: 'EA unregistered successfully' });
+    } catch (error) {
+      console.error('Error unregistering EA:', error);
+      res.status(500).json({ error: 'Failed to unregister EA' });
+    }
+  });
+
+  // EA heartbeat
+  app.post('/api/mt45/heartbeat', async (req, res) => {
+    try {
+      const { connectionId, status, balance, equity } = req.body;
+      
+      if (eaConnections.has(connectionId)) {
+        const connection = eaConnections.get(connectionId);
+        connection.lastHeartbeat = new Date();
+        connection.status = status;
+        connection.balance = balance;
+        connection.equity = equity;
+        eaConnections.set(connectionId, connection);
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error processing heartbeat:', error);
+      res.status(500).json({ error: 'Failed to process heartbeat' });
+    }
+  });
+
+  // Get signals for specific EA
+  app.get('/api/mt45/signals/:connectionId', async (req, res) => {
+    try {
+      const { connectionId } = req.params;
+      
+      const signals = pendingSignals.get(connectionId) || [];
+      
+      // Clear signals after sending
+      pendingSignals.set(connectionId, []);
+      
+      res.json({ signals });
+    } catch (error) {
+      console.error('Error fetching signals:', error);
+      res.status(500).json({ error: 'Failed to fetch signals' });
+    }
+  });
+
+  // Send signal to EA
+  app.post('/api/mt45/send-signal', async (req, res) => {
+    try {
+      const { connectionId, signal } = req.body;
+      
+      if (!eaConnections.has(connectionId)) {
+        return res.status(404).json({ error: 'EA connection not found' });
+      }
+      
+      const currentSignals = pendingSignals.get(connectionId) || [];
+      currentSignals.push({
+        ...signal,
+        id: Date.now(),
+        timestamp: new Date().toISOString()
+      });
+      pendingSignals.set(connectionId, currentSignals);
+      
+      res.json({ success: true, message: 'Signal queued for EA' });
+    } catch (error) {
+      console.error('Error sending signal:', error);
+      res.status(500).json({ error: 'Failed to send signal' });
+    }
+  });
+
+  // Trade confirmation from EA
+  app.post('/api/mt45/trade-confirmation', async (req, res) => {
+    try {
+      const { connectionId, originalSignal, status, timestamp } = req.body;
+      
+      console.log(`Trade confirmation from ${connectionId}: ${status}`);
+      
+      // Here you could store trade confirmations in database
+      // await db.insert(tradeConfirmations).values({...});
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error processing trade confirmation:', error);
+      res.status(500).json({ error: 'Failed to process confirmation' });
+    }
+  });
+
+  // Get all EA connections status
+  app.get('/api/mt45/connections', async (req, res) => {
+    try {
+      const connections = Array.from(eaConnections.values()).map(conn => ({
+        ...conn,
+        isActive: (new Date().getTime() - new Date(conn.lastHeartbeat).getTime()) < 60000 // Active if heartbeat within 1 minute
+      }));
+      
+      res.json({ connections });
+    } catch (error) {
+      console.error('Error fetching connections:', error);
+      res.status(500).json({ error: 'Failed to fetch connections' });
+    }
+  });
+
+  // Broadcast signal to all connected EAs
+  app.post('/api/mt45/broadcast-signal', async (req, res) => {
+    try {
+      const { signal } = req.body;
+      let sentCount = 0;
+      
+      for (const [connectionId, connection] of eaConnections.entries()) {
+        // Only send to active connections
+        const isActive = (new Date().getTime() - new Date(connection.lastHeartbeat).getTime()) < 60000;
+        
+        if (isActive && signal.symbol === connection.symbol) {
+          const currentSignals = pendingSignals.get(connectionId) || [];
+          currentSignals.push({
+            ...signal,
+            id: Date.now(),
+            timestamp: new Date().toISOString()
+          });
+          pendingSignals.set(connectionId, currentSignals);
+          sentCount++;
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Signal broadcasted to ${sentCount} EAs`,
+        sentCount 
+      });
+    } catch (error) {
+      console.error('Error broadcasting signal:', error);
+      res.status(500).json({ error: 'Failed to broadcast signal' });
+    }
+  });
+
+  // Test signal endpoint for development
+  app.post('/api/mt45/test-signal', async (req, res) => {
+    try {
+      const testSignal = {
+        signal: 'BUY',
+        symbol: 'EURUSD',
+        entryPrice: 1.1000,
+        stopLoss: 1.0950,
+        targetPrice: 1.1050,
+        confidence: 0.85,
+        reasoning: 'Test signal from GenZ Trading Platform'
+      };
+      
+      let sentCount = 0;
+      for (const [connectionId, connection] of eaConnections.entries()) {
+        const isActive = (new Date().getTime() - new Date(connection.lastHeartbeat).getTime()) < 60000;
+        
+        if (isActive) {
+          const currentSignals = pendingSignals.get(connectionId) || [];
+          currentSignals.push({
+            ...testSignal,
+            id: Date.now(),
+            timestamp: new Date().toISOString()
+          });
+          pendingSignals.set(connectionId, currentSignals);
+          sentCount++;
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Test signal sent to ${sentCount} connected EAs`,
+        signal: testSignal,
+        sentCount 
+      });
+    } catch (error) {
+      console.error('Error sending test signal:', error);
+      res.status(500).json({ error: 'Failed to send test signal' });
     }
   });
 }
