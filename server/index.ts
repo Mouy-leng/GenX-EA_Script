@@ -1,116 +1,139 @@
 
 import express from 'express';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import cors from 'cors';
+import { setupVite, serveStatic } from './vite.js';
+import { registerRoutes } from './routes.js';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
-import cors from 'cors';
-import session from 'express-session';
-import ConnectPgSimple from 'connect-pg-simple';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { db } from './db.js';
-import { setupRoutes } from './routes.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
-const server = createServer(app);
+const PORT = process.env.PORT || 5000;
 
-// PostgreSQL session store
-const PgSession = ConnectPgSimple(session);
+// Enhanced logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});
 
-// Middleware
+// CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
-    : ['http://localhost:5000', 'http://127.0.0.1:5000'],
+    ? false 
+    : ['http://localhost:3000', 'http://0.0.0.0:3000'],
   credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Session configuration
-app.use(session({
-  store: new PgSession({
-    conString: process.env.DATABASE_URL,
-    tableName: 'user_sessions',
-    createTableIfMissing: true
-  }),
-  secret: process.env.SESSION_SECRET || 'trading-bot-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
-
-// WebSocket setup
-const wss = new WebSocketServer({ server });
-const clients = new Set();
-
-wss.on('connection', (ws) => {
-  clients.add(ws);
-  console.log('WebSocket client connected');
-
-  ws.on('close', () => {
-    clients.delete(ws);
-    console.log('WebSocket client disconnected');
-  });
-
-  ws.on('error', (error) => {
-    console.error('WebSocket error:', error);
-    clients.delete(ws);
-  });
-});
-
-// Broadcast function for real-time updates
-export const broadcast = (data: any) => {
-  const message = JSON.stringify(data);
-  clients.forEach((client: any) => {
-    if (client.readyState === 1) { // WebSocket.OPEN
-      client.send(message);
-    }
-  });
-};
-
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ 
-    status: 'healthy', 
+    status: 'OK', 
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// Setup API routes
-setupRoutes(app);
+// Register API routes
+registerRoutes(app);
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  const clientDistPath = join(__dirname, '../dist/public');
-  app.use(express.static(clientDistPath));
+// Create HTTP server
+const server = createServer(app);
+
+// WebSocket setup
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (ws, req) => {
+  console.log('WebSocket connection established from:', req.socket.remoteAddress);
   
-  app.get('*', (req, res) => {
-    if (req.path.startsWith('/api/')) {
-      return res.status(404).json({ error: 'API endpoint not found' });
+  ws.on('message', (data) => {
+    try {
+      const message = JSON.parse(data.toString());
+      console.log('Received WebSocket message:', message);
+      
+      // Echo back for testing
+      ws.send(JSON.stringify({
+        type: 'echo',
+        data: message,
+        timestamp: new Date().toISOString()
+      }));
+    } catch (error) {
+      console.error('WebSocket message error:', error);
+      ws.send(JSON.stringify({
+        type: 'error',
+        message: 'Invalid JSON format'
+      }));
     }
-    res.sendFile(join(clientDistPath, 'index.html'));
   });
+
+  ws.on('close', () => {
+    console.log('WebSocket connection closed');
+  });
+
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+  });
+
+  // Send welcome message
+  ws.send(JSON.stringify({
+    type: 'welcome',
+    message: 'Connected to GenZ Trading Bot Pro',
+    timestamp: new Date().toISOString()
+  }));
+});
+
+// Setup Vite in development or serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  serveStatic(app, join(__dirname, '..', 'dist', 'public'));
+} else {
+  await setupVite(app, server);
 }
 
-const PORT = parseInt(process.env.PORT || '5000', 10);
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
 
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: 'Not found',
+    path: req.originalUrl
+  });
+});
+
+// Start server
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 GenZ Trading Bot Pro is running on port ${PORT}`);
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 WebSocket server ready for real-time connections`);
+  console.log(`🔗 WebSocket server ready`);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
   server.close(() => {
-    console.log('Process terminated');
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
   });
 });

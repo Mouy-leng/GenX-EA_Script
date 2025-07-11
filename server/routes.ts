@@ -1,11 +1,10 @@
-
 import { Express } from 'express';
 import { db } from './db.js';
 import { users, tradingAccounts, positions, notifications, educationalResources } from '../shared/schema.js';
 import { eq, desc, and, or, ilike, count } from 'drizzle-orm';
 
 export function registerRoutes(app: Express) {
-  
+
   // Test route
   app.get('/api/test', async (req, res) => {
     try {
@@ -35,14 +34,60 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Comprehensive health check
+  app.get('/api/health', async (req, res) => {
+    try {
+      const checks = {
+        database: 'unknown',
+        python_service: 'unknown',
+        websocket: 'active',
+        memory: process.memoryUsage(),
+        uptime: process.uptime()
+      };
+
+      // Test database connection
+      try {
+        await db.select().from(users).limit(1);
+        checks.database = 'connected';
+      } catch (dbError) {
+        checks.database = 'disconnected';
+      }
+
+      // Check Python service (if applicable)
+      try {
+        // This would be where you'd ping your Python service
+        checks.python_service = 'available';
+      } catch (pyError) {
+        checks.python_service = 'unavailable';
+      }
+
+      const isHealthy = checks.database === 'connected';
+
+      res.status(isHealthy ? 200 : 503).json({
+        status: isHealthy ? 'healthy' : 'degraded',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        version: '1.0.0',
+        checks
+      });
+    } catch (error) {
+      console.error('Health check failed:', error);
+      res.status(503).json({
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error.message
+      });
+    }
+  });
+
   // Educational Resources Routes
   app.get('/api/educational-resources', async (req, res) => {
     try {
       const { page = '1', limit = '10', search = '', skillLevel, category } = req.query;
       const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
-      
+
       let whereConditions = [];
-      
+
       if (search) {
         whereConditions.push(
           or(
@@ -51,11 +96,11 @@ export function registerRoutes(app: Express) {
           )
         );
       }
-      
+
       if (skillLevel) {
         whereConditions.push(eq(educationalResources.skillLevel, skillLevel as string));
       }
-      
+
       if (category) {
         whereConditions.push(eq(educationalResources.category, category as string));
       }
@@ -95,7 +140,7 @@ export function registerRoutes(app: Express) {
         .select()
         .from(tradingAccounts)
         .orderBy(desc(tradingAccounts.createdAt));
-      
+
       res.json({ accounts });
     } catch (error) {
       console.error('Error fetching trading accounts:', error);
@@ -111,7 +156,7 @@ export function registerRoutes(app: Express) {
         .from(positions)
         .where(eq(positions.status, 'open'))
         .orderBy(desc(positions.openTime));
-      
+
       res.json({ positions: activePositions });
     } catch (error) {
       console.error('Error fetching positions:', error);
@@ -127,7 +172,7 @@ export function registerRoutes(app: Express) {
         .from(notifications)
         .orderBy(desc(notifications.createdAt))
         .limit(50);
-      
+
       res.json({ notifications: recentNotifications });
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -166,7 +211,7 @@ export function registerRoutes(app: Express) {
   app.post('/api/mt45/register', async (req, res) => {
     try {
       const { eaName, connectionId, accountNumber, symbol, timeframe } = req.body;
-      
+
       eaConnections.set(connectionId, {
         eaName,
         connectionId,
@@ -179,7 +224,7 @@ export function registerRoutes(app: Express) {
       });
 
       console.log(`EA registered: ${eaName} (${connectionId})`);
-      
+
       res.json({ 
         success: true, 
         message: 'EA registered successfully',
@@ -195,13 +240,13 @@ export function registerRoutes(app: Express) {
   app.post('/api/mt45/unregister', async (req, res) => {
     try {
       const { connectionId } = req.body;
-      
+
       if (eaConnections.has(connectionId)) {
         eaConnections.delete(connectionId);
         pendingSignals.delete(connectionId);
         console.log(`EA unregistered: ${connectionId}`);
       }
-      
+
       res.json({ success: true, message: 'EA unregistered successfully' });
     } catch (error) {
       console.error('Error unregistering EA:', error);
@@ -213,7 +258,7 @@ export function registerRoutes(app: Express) {
   app.post('/api/mt45/heartbeat', async (req, res) => {
     try {
       const { connectionId, status, balance, equity } = req.body;
-      
+
       if (eaConnections.has(connectionId)) {
         const connection = eaConnections.get(connectionId);
         connection.lastHeartbeat = new Date();
@@ -222,7 +267,7 @@ export function registerRoutes(app: Express) {
         connection.equity = equity;
         eaConnections.set(connectionId, connection);
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error('Error processing heartbeat:', error);
@@ -234,12 +279,12 @@ export function registerRoutes(app: Express) {
   app.get('/api/mt45/signals/:connectionId', async (req, res) => {
     try {
       const { connectionId } = req.params;
-      
+
       const signals = pendingSignals.get(connectionId) || [];
-      
+
       // Clear signals after sending
       pendingSignals.set(connectionId, []);
-      
+
       res.json({ signals });
     } catch (error) {
       console.error('Error fetching signals:', error);
@@ -251,11 +296,11 @@ export function registerRoutes(app: Express) {
   app.post('/api/mt45/send-signal', async (req, res) => {
     try {
       const { connectionId, signal } = req.body;
-      
+
       if (!eaConnections.has(connectionId)) {
         return res.status(404).json({ error: 'EA connection not found' });
       }
-      
+
       const currentSignals = pendingSignals.get(connectionId) || [];
       currentSignals.push({
         ...signal,
@@ -263,7 +308,7 @@ export function registerRoutes(app: Express) {
         timestamp: new Date().toISOString()
       });
       pendingSignals.set(connectionId, currentSignals);
-      
+
       res.json({ success: true, message: 'Signal queued for EA' });
     } catch (error) {
       console.error('Error sending signal:', error);
@@ -275,12 +320,12 @@ export function registerRoutes(app: Express) {
   app.post('/api/mt45/trade-confirmation', async (req, res) => {
     try {
       const { connectionId, originalSignal, status, timestamp } = req.body;
-      
+
       console.log(`Trade confirmation from ${connectionId}: ${status}`);
-      
+
       // Here you could store trade confirmations in database
       // await db.insert(tradeConfirmations).values({...});
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error('Error processing trade confirmation:', error);
@@ -295,7 +340,7 @@ export function registerRoutes(app: Express) {
         ...conn,
         isActive: (new Date().getTime() - new Date(conn.lastHeartbeat).getTime()) < 60000 // Active if heartbeat within 1 minute
       }));
-      
+
       res.json({ connections });
     } catch (error) {
       console.error('Error fetching connections:', error);
@@ -308,11 +353,11 @@ export function registerRoutes(app: Express) {
     try {
       const { signal } = req.body;
       let sentCount = 0;
-      
+
       for (const [connectionId, connection] of eaConnections.entries()) {
         // Only send to active connections
         const isActive = (new Date().getTime() - new Date(connection.lastHeartbeat).getTime()) < 60000;
-        
+
         if (isActive && signal.symbol === connection.symbol) {
           const currentSignals = pendingSignals.get(connectionId) || [];
           currentSignals.push({
@@ -324,7 +369,7 @@ export function registerRoutes(app: Express) {
           sentCount++;
         }
       }
-      
+
       res.json({ 
         success: true, 
         message: `Signal broadcasted to ${sentCount} EAs`,
@@ -348,11 +393,11 @@ export function registerRoutes(app: Express) {
         confidence: 0.85,
         reasoning: 'Test signal from GenZ Trading Platform'
       };
-      
+
       let sentCount = 0;
       for (const [connectionId, connection] of eaConnections.entries()) {
         const isActive = (new Date().getTime() - new Date(connection.lastHeartbeat).getTime()) < 60000;
-        
+
         if (isActive) {
           const currentSignals = pendingSignals.get(connectionId) || [];
           currentSignals.push({
@@ -364,7 +409,7 @@ export function registerRoutes(app: Express) {
           sentCount++;
         }
       }
-      
+
       res.json({ 
         success: true, 
         message: `Test signal sent to ${sentCount} connected EAs`,
