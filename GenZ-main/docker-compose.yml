@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+  client:
+    build:
+      context: ./client
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./client:/app
+    command: npm run dev
+
+  server:
+    build:
+      context: ./server
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./server:/app
+    command: npm run dev
+
+  python:
+    build:
+      context: ./python
+      dockerfile: Dockerfile
+    volumes:
+      - ./python:/app
+    command: tail -f /dev/null # Placeholder, replace with your pattern engine start command
+
+# Add a Postgres service if needed
+#  db:
+#    image: postgres:15
+#    environment:
+#      POSTGRES_USER: user
+#      POSTGRES_PASSWORD: password
+#      POSTGRES_DB: genz
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - pgdata:/var/lib/postgresql/data
+#volumes:
+#  pgdata:

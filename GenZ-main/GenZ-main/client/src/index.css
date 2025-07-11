@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 1.2%;
+    --secondary: 222.2 84% 4.9%;
+    --secondary-foreground: 210 40% 98%;
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --ring: 216 34% 17%;
+    --radius: 0.5rem;
+
+    /* Trading specific colors */
+    --profit: 142 76% 36%;
+    --loss: 0 84% 60%;
+    --warning: 38 92% 50%;
+    --info: 199 89% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .profit {
+    @apply text-green-500;
+  }
+  .loss {
+    @apply text-red-500;
+  }
+  .trading-card {
+    @apply bg-card border border-border rounded-lg p-4;
+  }
+  .metric-card {
+    @apply trading-card space-y-2;
+  }
+  .metric-value {
+    @apply text-2xl font-bold;
+  }
+  .metric-label {
+    @apply text-muted-foreground text-sm;
+  }
+  .sidebar-nav {
+    @apply space-y-1;
+  }
+  .sidebar-nav-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground;
+  }
+  .sidebar-nav-item.active {
+    @apply bg-accent text-accent-foreground;
+  }
+}

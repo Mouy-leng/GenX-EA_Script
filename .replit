@@ -1,26 +1,2 @@
-modules = ["nodejs-20", "web", "postgresql-16", "python-3.11"]
-run = "npm run dev"
-
-[deployment]
-deploymentTarget = "autoscale"
-build = ["sh", "-c", "npm run build"]
-run = ["sh", "-c", "npm run start"]
-
-[[ports]]
-localPort = 5000
-externalPort = 80
-
-[env]
-NODE_ENV = "production"
-
-[workflows]
-runButton = "Run"
-
-[[workflows.workflow]]
-name = "Run"
-author = 44802328
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd Gendollardollar && npm run dev"
+[nix]
+packages = ["unzipNLS"]

@@ -1,0 +1,7 @@
+pandas
+numpy
+matplotlib
+# Uncomment for advanced TA
+# pandas-ta
+ta-lib
+# mlfinlab
