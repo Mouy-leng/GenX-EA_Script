@@ -1,0 +1,50 @@
+name: Build & Deploy to Railway
+
+on:
+  push:
+    branches:
+      - main  # change to your branch if needed
+  workflow_dispatch:  # allow manual trigger
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚀 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      - name: 📦 Install Node dependencies
+        run: npm install
+
+      - name: 🐍 Install Python dependencies
+        run: pip install -r python/requirements.txt
+
+      - name: ⚙️ Set up environment variables
+        run: |
+          cp .env.example .env
+          echo "ENV variables setup done (expect secrets to be set in Railway)"
+        
+      - name: 🔧 Build project (if applicable)
+        run: npm run build
+
+      # Optional: Lint or test
+      # - name: ✅ Run tests
+      #   run: npm run lint && npm test
+
+      - name: 📦 Deploy to Railway
+        uses: railwayapp/cli@v2
+        with:
+          args: up --service=genz-trading  # replace with your Railway service name
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
