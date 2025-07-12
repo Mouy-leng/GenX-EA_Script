@@ -1,22 +1,30 @@
+import { Route, Switch } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import HomePage from "@/pages/home";
+import NotFoundPage from "@/pages/not-found";
 
-import React from 'react';
-import { Router, Route, Switch } from 'wouter';
-import { Toaster } from '@/components/ui/toaster';
-import Dashboard from '@/pages/Dashboard';
-import NotFound from '@/pages/NotFound';
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 function App() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Router>
+    <QueryClientProvider client={queryClient}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route component={NotFound} />
+          <Route path="/" component={HomePage} />
+          <Route component={NotFoundPage} />
         </Switch>
-      </Router>
-      <Toaster />
-    </div>
+        <Toaster />
+      </div>
+    </QueryClientProvider>
   );
 }
 
