@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  client:
+    build:
+      context: .
+      target: client-builder
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./client:/app/client
+    command: yarn client
+
+  server:
+    build:
+      context: .
+      target: server-builder
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app
+    command: yarn server
+
+  python:
+    build:
+      context: .
+      target: python-builder
+    volumes:
+      - ./services/python:/app/python
+    command: python /app/python/main.py
