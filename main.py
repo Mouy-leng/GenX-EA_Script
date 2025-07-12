@@ -1,7 +1,15 @@
-from core.patterns.pattern_detector import detect_patterns
-from core.strategies.signal_analyzer import generate_signals
+import os
+import sys
+import pandas as pd
+import joblib
+
+# Add the project root to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from core.execution.bybit import BybitAPI
-# from services.telegram_bot import send_alert
+from core.patterns.pattern_detector import PatternDetector
+from core.strategies.signal_analyzer import SignalAnalyzer
+from scripts.feature_engineering import create_features
 
 def get_realtime_data(symbol):
     """
@@ -19,32 +27,64 @@ def get_realtime_data(symbol):
         # The kline data is returned in reverse chronological order. We need to reverse it.
         kline_data.reverse()
 
-        # Extract the close prices from the kline data.
-        close_prices = [float(k[4]) for k in kline_data]
+        # Create a pandas DataFrame from the data.
+        df = pd.DataFrame(kline_data, columns=["timestamp", "open", "high", "low", "close", "volume", "turnover"])
 
-        return {
-            "symbol": symbol,
-            "open": [float(k[1]) for k in kline_data],
-            "high": [float(k[2]) for k in kline_data],
-            "low": [float(k[3]) for k in kline_data],
-            "close": close_prices,
-            "volume": [float(k[5]) for k in kline_data],
-        }
+        # Convert the timestamp to a datetime object and set it as the index.
+        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
+        df.set_index("timestamp", inplace=True)
+
+        return df
     else:
         print(f"Error fetching market data: {market_data}")
-        return None
+        # Return sample data if fetching fails
+        print("Returning sample data.")
+        data_dir = "data"
+        file_path = os.path.join(data_dir, "sample_data.csv")
+        if os.path.exists(file_path):
+            df = pd.read_csv(file_path)
+            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            df.set_index("timestamp", inplace=True)
+            return df
+        else:
+            return None
 
 if __name__ == "__main__":
-    market_data = get_realtime_data("BTCUSDT")
+    # Load the trained model
+    models_dir = "ai_models"
+    model_file_path = os.path.join(models_dir, "market_predictor.joblib")
+    model = joblib.load(model_file_path)
 
-    if market_data:
-        patterns = detect_patterns(market_data)
-        signals = generate_signals(patterns)
+    # Get real-time data
+    df = get_realtime_data("BTCUSDT")
+
+    if df is not None:
+        # Create features
+        features_df = create_features(df.copy())
+
+        # Make predictions
+        if not features_df.empty:
+            X = features_df.drop(columns=['target'])
+            predictions = model.predict(X)
+
+            # Add predictions to the DataFrame
+            features_df['prediction'] = predictions
+
+            print("Predictions:")
+            print(features_df[['close', 'prediction']].tail())
+        else:
+            print("Not enough data to make predictions.")
+
+        # Generate signals from patterns
+        pattern_detector = PatternDetector()
+        patterns = pattern_detector.detect_patterns(df)
+
+        signal_analyzer = SignalAnalyzer()
+        signals = signal_analyzer.analyze_signals(patterns, df)
 
         if signals:
-            print("Signals generated:", signals)
-            # bybit_api = BybitAPI()
-            # bybit_api.execute_order("BTCUSDT", "Buy", "Market", 0.01)
-            # send_alert(signals)
+            print("Signals generated from patterns:", signals)
         else:
-            print("No signals generated.")
+            print("No signals generated from patterns.")
+    else:
+        print("Could not fetch or load data.")
