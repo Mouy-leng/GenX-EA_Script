@@ -1,173 +1,106 @@
-
 # GenZ Trading Platform
 
 A comprehensive AI-powered trading platform with multi-platform support, real-time data processing, automated trading capabilities, and advanced pattern recognition algorithms.
 
-## 🚀 Features
+## 🚀 Project Status
 
-- **Multi-platform Trading**: Bybit, Capital.com, MT4/MT5 integration
-- **AI-powered Analysis**: OpenAI GPT-4o for market sentiment and signals
-- **Real-time Data**: WebSocket-based price streaming and updates
-- **Pattern Recognition**: Advanced technical analysis algorithms using Python
-- **Notification System**: Discord and Telegram bot integration
-- **Educational Resources**: Learning materials and tutorials
-- **Live Trading Signals**: Automated signal generation and distribution
+This project is currently under active development. Here's a summary of the current status:
+
+**Completed:**
+
+*   **Project Scaffolding:** The project has a well-organized structure, separating the core logic, services, AI models, and other components.
+*   **Technical Indicators:** A suite of technical indicators has been implemented and tested, including RSI, MACD, and Moving Averages.
+*   **Bybit Integration (Initial):** A module for interacting with the Bybit API has been created. **Note:** There is an ongoing issue with the API key that needs to be resolved to enable real-time data fetching.
+*   **AI Model (Proof of Concept):** A Random Forest Classifier has been trained on sample data to predict market movements. This serves as a proof of concept for the AI-powered features.
+*   **Colab Notebook:** A Colab notebook has been created to demonstrate the core features of the project, including the technical indicators and pattern detection.
+
+**Next Steps:**
+
+1.  **Resolve Bybit API Key Issue:** The immediate priority is to resolve the `403 Forbidden` error with the Bybit API key to enable real-time data collection.
+2.  **Real-time Data Processing:** Integrate the Bybit API with the main application to process real-time market data.
+3.  **Signal Generation:** Use the AI model's predictions to generate trading signals.
+4.  **Order Execution:** Use the Bybit API to execute trades based on the trading signals.
+5.  **Telegram/Discord Bots:** Implement the Telegram and Discord bots to send notifications.
+6.  **Scheduling:** Set up a scheduler to run the trading bot at regular intervals.
 
 ## 📁 Project Structure
 
 ```
-├── client/                 # React frontend application
-│   ├── src/
-│   │   ├── components/     # Reusable UI components (Radix UI + shadcn/ui)
-│   │   ├── pages/          # Page components for different features
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── lib/            # Utilities and configurations
-│   │   └── types/          # TypeScript type definitions
-├── server/                 # Node.js backend API
-│   ├── shared/             # Database schema definitions
-│   ├── db.ts              # Neon PostgreSQL configuration
-│   ├── index.ts           # Express server entry point
-│   ├── routes.ts          # API routes
-│   └── debug.ts           # Debugging middleware
-├── shared/                 # Shared TypeScript types and schemas
-├── python/                 # Python trading algorithms and ML models
-│   ├── pattern_engine/     # Advanced pattern detection algorithms
-│   │   ├── pattern_detector.py    # Technical pattern recognition
-│   │   ├── signal_analyzer.py     # Trading signal analysis
-│   │   └── market_predictor.py    # Market prediction models
-│   ├── models/            # ML model storage
-│   ├── main.py            # Python service entry point
-│   └── requirements.txt   # Python dependencies
-└── scripts/               # Build and deployment scripts
+genz-trading-backend/
+├── core/                        # Core logic (pattern detection, signal generation, etc.)
+│   ├── patterns/               # Harmonic, candlestick, etc.
+│   ├── indicators/             # RSI, MACD, MA cross, etc.
+│   ├── strategies/             # Rule-based or ML-based
+│   ├── execution/              # Bybit, MT5, Capital.com trading API integrations
+│   └── risk_management.py
+│
+├── services/                   # Interfaces with outside world
+│   ├── websocket_feed.py       # Real-time market data
+│   ├── telegram_bot.py         # Signal notifications
+│   ├── discord_bot.py
+│   ├── scheduler.py            # Cron jobs / event triggers
+│   └── notifier.py
+│
+├── ai_models/                  # Trained AI models, predictors
+│   ├── market_predictor.py
+│   └── model_utils.py
+│
+├── api/                        # Optional FastAPI REST server
+│   └── main.py                 # Run this to expose AI logic over API
+│
+├── utils/                      # Logging, .env loading, JSON helpers
+│   └── config.py
+│
+├── .env                        # Secrets (API keys, bot tokens, etc.)
+├── requirements.txt
+├── main.py                     # Entry point to run engine manually
+└── README.md
 ```
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: React 18, TypeScript, Tailwind CSS, Radix UI, shadcn/ui
-- **Backend**: Node.js, Express, Socket.io, TypeScript
-- **Database**: PostgreSQL with Drizzle ORM (Neon serverless)
-- **AI/ML**: Python, OpenAI API, NumPy, Pandas
+- **Backend**: Python
+- **AI/ML**: scikit-learn, pandas, numpy
+- **API**: FastAPI (optional)
 - **Real-time**: WebSocket connections for live data
-- **UI Components**: Comprehensive component library with dark/light themes
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18 or higher)
 - Python 3.8+
-- PostgreSQL database (Neon recommended)
 
 ### Installation
 
-1. **Install Node.js dependencies:**
+1. **Install Python dependencies:**
    ```bash
-   npm install
+   pip install -r requirements.txt
    ```
 
-2. **Install Python dependencies:**
-   ```bash
-   pip install -r python/requirements.txt
-   ```
-
-3. **Set up environment variables:**
+2. **Set up environment variables:**
    ```bash
    cp .env.example .env
    ```
-   Configure your database URL, API keys, and other secrets.
+   Configure your Bybit API keys and other secrets.
 
-4. **Initialize the database:**
+3. **Run the application:**
    ```bash
-   npm run db:generate
-   npm run db:migrate
+   python main.py
    ```
-
-5. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
-
-This will start both the React frontend (port 5173) and Node.js backend concurrently.
-
-## 📊 Core Modules
-
-### Trading Integrations
-- **Bybit Integration**: Real-time market data and trading execution
-- **MT4/MT5 Signals**: Professional trading signal integration
-- **Capital.com**: Additional trading platform support
-
-### AI & Analytics
-- **Pattern Recognition**: Advanced technical analysis using Python
-- **Market Prediction**: ML-based market forecasting
-- **Signal Analysis**: Automated trading signal generation
-- **AI Services**: OpenAI integration for market sentiment
-
-### Communication
-- **Discord Bot**: Rich trading signals with embeds
-- **Telegram Bot**: Real-time signal distribution
-- **Real-time Dashboard**: Live trading data visualization
-
-## 🔧 Development Commands
-
-```bash
-# Development
-npm run dev              # Start both client and server
-npm run client          # Start only React frontend
-npm run server          # Start only Node.js backend
-
-# Database
-npm run db:generate     # Generate database migrations
-npm run db:migrate      # Run database migrations
-npm run db:studio       # Open Drizzle Studio
-
-# Build & Deploy
-npm run build           # Build for production
-npm run preview         # Preview production build
-npm run lint            # Run ESLint
-```
 
 ## 🐍 Python Services
 
 The Python services handle advanced trading algorithms and pattern recognition:
 
 ```bash
-# Run Python pattern recognition
-cd python && python main.py
+# Download historical data
+python scripts/download_data.py
 
-# Install Python dependencies
-pip install -r python/requirements.txt
+# Generate features
+python scripts/feature_engineering.py
+
+# Train the model
+python scripts/train_model.py
 ```
-
-## 🌐 API Endpoints
-
-- `GET /api/health` - Health check
-- `GET /api/trading-bots` - List trading bots
-- `POST /api/trading-bots` - Create new bot
-- `GET /api/patterns` - Pattern analysis results
-- `WebSocket /ws` - Real-time data stream
-
-## 🎨 UI Components
-
-Built with a comprehensive component library including:
-- Forms, Tables, Charts, Dialogs
-- Navigation, Sidebars, Tabs
-- Cards, Badges, Buttons, Inputs
-- Toast notifications, Loading states
-- Responsive design with mobile support
-
-## 📈 Trading Features
-
-- **Real-time Market Data**: Live price feeds from multiple exchanges
-- **Automated Trading Bots**: Customizable trading strategies
-- **Risk Management**: Built-in stop-loss and take-profit mechanisms
-- **Portfolio Tracking**: Real-time portfolio performance monitoring
-- **Signal Distribution**: Multi-channel signal broadcasting
-
-## 🔒 Security
-
-- Environment variable management for API keys
-- Secure database connections
-- Input validation and sanitization
-- Rate limiting and error handling
 
 ## 📝 License
 
