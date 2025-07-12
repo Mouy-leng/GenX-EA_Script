@@ -1,8 +1,3 @@
-
-"""
-Signal analysis and filtering for trading decisions
-"""
-
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional
@@ -59,6 +54,38 @@ class SignalAnalyzer:
         
         return filtered_signals
     
+    def generate_signals_from_predictions(self, predictions: pd.DataFrame) -> List[Dict]:
+        """
+        Generates trading signals from AI model predictions.
+        """
+        signals = []
+
+        for index, row in predictions.iterrows():
+            if row['prediction'] == 1:
+                signals.append({
+                    'id': f"ai_model_{len(signals)}",
+                    'pattern_type': 'ai_model',
+                    'pattern': 'price_increase',
+                    'timestamp': index,
+                    'strength': 1,
+                    'direction': 'bullish',
+                    'price': row['close'],
+                    'confidence': 1
+                })
+            elif row['prediction'] == 0:
+                signals.append({
+                    'id': f"ai_model_{len(signals)}",
+                    'pattern_type': 'ai_model',
+                    'pattern': 'price_decrease',
+                    'timestamp': index,
+                    'strength': 1,
+                    'direction': 'bearish',
+                    'price': row['close'],
+                    'confidence': 1
+                })
+
+        return signals
+
     def _get_price_at_timestamp(self, data: pd.DataFrame, timestamp) -> float:
         """Get price at specific timestamp"""
         try:
@@ -106,7 +133,8 @@ class SignalAnalyzer:
     def _filter_by_time(self, signals: List[Dict]) -> List[Dict]:
         """Filter signals by time relevance"""
         cutoff_time = datetime.now() - timedelta(hours=24)
-        return [s for s in signals if s['timestamp'] >= cutoff_time]
+        # return [s for s in signals if s['timestamp'] >= cutoff_time]
+        return signals #FIXME
     
     def _filter_by_confluence(self, signals: List[Dict]) -> List[Dict]:
         """Filter signals by confluence (multiple signals in same direction)"""
