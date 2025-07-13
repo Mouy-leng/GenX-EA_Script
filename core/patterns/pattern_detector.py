@@ -49,10 +49,12 @@ class PatternDetector:
         return results
 
     def _detect_candlestick_patterns(self, data: pd.DataFrame) -> List[Dict]:
-        """Detect candlestick patterns using the 'ta' library"""
+        """
+        Detect candlestick patterns using the 'ta' library.
+        Note: The 'ta' library does not have direct candlestick pattern detection.
+        This is a placeholder for future implementation.
+        """
         patterns = []
-        # The 'ta' library does not have direct candlestick pattern detection
-        # This is a placeholder for future implementation
         return patterns
 
     def _detect_chart_patterns(self, data: pd.DataFrame) -> List[Dict]:

@@ -5,10 +5,13 @@ import requests
 from utils.config import BYBIT_API_KEY, BYBIT_SECRET
 
 class BybitAPI:
-    def __init__(self):
+    def __init__(self, paper_trading=False):
         self.api_key = BYBIT_API_KEY
         self.api_secret = BYBIT_SECRET
-        self.base_url = "https://api.bybit.com"
+        if paper_trading:
+            self.base_url = "https://api-testnet.bybit.com"
+        else:
+            self.base_url = "https://api.bybit.com"
 
     def _generate_signature(self, timestamp, payload):
         if not self.api_key or not self.api_secret:

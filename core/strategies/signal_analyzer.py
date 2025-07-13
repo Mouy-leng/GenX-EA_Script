@@ -133,8 +133,7 @@ class SignalAnalyzer:
     def _filter_by_time(self, signals: List[Dict]) -> List[Dict]:
         """Filter signals by time relevance"""
         cutoff_time = datetime.now() - timedelta(hours=24)
-        # return [s for s in signals if s['timestamp'] >= cutoff_time]
-        return signals #FIXME
+        return [s for s in signals if s['timestamp'].to_pydatetime() >= cutoff_time]
     
     def _filter_by_confluence(self, signals: List[Dict]) -> List[Dict]:
         """Filter signals by confluence (multiple signals in same direction)"""
