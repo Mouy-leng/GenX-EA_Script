@@ -110,8 +110,6 @@ This project is proprietary software. All rights reserved.
 
 This is a private trading platform. For development questions or feature requests, please contact the development team.
 
-CI/CD pipeline configured.
-
 ---
 
 **Note**: This platform is designed for educational and development purposes. Always conduct thorough testing before using with real trading accounts.
