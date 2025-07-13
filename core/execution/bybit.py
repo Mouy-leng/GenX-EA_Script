@@ -10,10 +10,10 @@ class BybitAPI:
         self.api_secret = BYBIT_SECRET
         self.base_url = "https://api.bybit.com"
 
-    def _generate_signature(self, params):
+    def _generate_signature(self, timestamp, payload):
         if not self.api_key or not self.api_secret:
             return ""
-        param_str = str(int(time.time() * 1000)) + self.api_key + "5000" + '&'.join([f'{key}={value}' for key, value in sorted(params.items())])
+        param_str = str(timestamp) + self.api_key + "5000" + payload
         return hmac.new(self.api_secret.encode('utf-8'), param_str.encode('utf-8'), hashlib.sha256).hexdigest()
 
     def get_market_data(self, symbol, interval, limit=200, **kwargs):
@@ -30,12 +30,14 @@ class BybitAPI:
         params.update(kwargs)
 
         timestamp = int(time.time() * 1000)
+        query_string = '&'.join([f'{key}={value}' for key, value in sorted(params.items())])
+        signature = self._generate_signature(timestamp, query_string)
 
         headers = {
             "X-BAPI-API-KEY": self.api_key,
             "X-BAPI-TIMESTAMP": str(timestamp),
             "X-BAPI-RECV-WINDOW": "5000",
-            "X-BAPI-SIGN": self._generate_signature(params)
+            "X-BAPI-SIGN": signature
         }
 
         try:
@@ -60,12 +62,14 @@ class BybitAPI:
         }
 
         timestamp = int(time.time() * 1000)
+        request_body = '&'.join([f'{key}={value}' for key, value in sorted(params.items())])
+        signature = self._generate_signature(timestamp, request_body)
 
         headers = {
             "X-BAPI-API-KEY": self.api_key,
             "X-BAPI-TIMESTAMP": str(timestamp),
             "X-BAPI-RECV-WINDOW": "5000",
-            "X-BAPI-SIGN": self._generate_signature(params)
+            "X-BAPI-SIGN": signature
         }
 
         try:
