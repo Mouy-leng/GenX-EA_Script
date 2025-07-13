@@ -6,7 +6,7 @@ requests>=2.25.0
 
 # Trading and financial analysis
 ccxt>=4.0.0
-talib>=0.4.0
+ta>=0.10.2
 yfinance>=0.2.0
 
 # Machine learning and AI
