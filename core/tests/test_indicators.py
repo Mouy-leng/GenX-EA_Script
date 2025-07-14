@@ -1,8 +1,14 @@
+import sys
+import os
 import unittest
 import numpy as np
-from ..indicators.rsi import calculate_rsi
-from ..indicators.macd import calculate_macd
-from ..indicators.moving_average import calculate_sma, calculate_ema
+
+# Add the project root to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+from core.indicators.rsi import calculate_rsi
+from core.indicators.macd import calculate_macd
+from core.indicators.moving_average import calculate_sma, calculate_ema
 
 class TestIndicators(unittest.TestCase):
 

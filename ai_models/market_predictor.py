@@ -1,32 +1,44 @@
 
 """
-Market prediction using machine learning and pattern analysis
+Market prediction using machine learning and pattern analysis.
 """
 
+import logging
+import os
+from typing import Any, Dict, List, Optional, Tuple
+
+import joblib
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-import joblib
-import os
+
+from . import model_utils
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class MarketPredictor:
     """
-    Machine learning-based market prediction
+    Machine learning-based market prediction.
     """
-    
-    def __init__(self, model_path: Optional[str] = None):
-        self.model = None
+
+    def __init__(self, model_path: Optional[str] = None) -> None:
+        """
+        Initializes the MarketPredictor.
+
+        Args:
+            model_path (Optional[str]): Path to save/load the model.
+        """
+        self.model: Optional[RandomForestClassifier] = None
         self.scaler = StandardScaler()
         self.is_trained = False
-        self.model_path = model_path or "models/market_predictor.pkl"
-        
-        # Load existing model if available
+        self.model_path = model_path or "models/market_predictor.joblib"
+
         if os.path.exists(self.model_path):
             self.load_model()
-    
+
     def prepare_features(self, data: pd.DataFrame) -> np.ndarray:
         """
         Prepare features for machine learning model
@@ -56,15 +68,15 @@ class MarketPredictor:
             features.append((close_prices - ma) / ma)
         
         # RSI
-        rsi = self._calculate_rsi(close_prices)
+        rsi = model_utils.calculate_rsi(close_prices)
         features.append(rsi / 100)  # Normalize to 0-1
         
         # MACD
-        macd, signal = self._calculate_macd(close_prices)
+        macd, signal = model_utils.calculate_macd(close_prices)
         features.extend([macd, signal])
         
         # Bollinger Bands
-        bb_upper, bb_lower = self._calculate_bollinger_bands(close_prices)
+        bb_upper, bb_lower = model_utils.calculate_bollinger_bands(close_prices)
         features.extend([
             (close_prices - bb_upper) / bb_upper,
             (close_prices - bb_lower) / bb_lower
@@ -78,32 +90,31 @@ class MarketPredictor:
         
         return feature_matrix
     
-    def train_model(self, data: pd.DataFrame, labels: np.ndarray):
+    def train_model(self, data: pd.DataFrame, labels: np.ndarray) -> None:
         """
-        Train the prediction model
-        
+        Train the prediction model.
+
         Args:
-            data: Training data
-            labels: Target labels (0=sell, 1=hold, 2=buy)
+            data (pd.DataFrame): Training data with OHLCV.
+            labels (np.ndarray): Target labels (0=sell, 1=hold, 2=buy).
         """
+        logging.info("Starting model training...")
         features = self.prepare_features(data)
         
-        # Scale features
         features_scaled = self.scaler.fit_transform(features)
         
-        # Train model
         self.model = RandomForestClassifier(
-            n_estimators=100,
-            max_depth=10,
-            random_state=42
+            n_estimators=150,
+            max_depth=15,
+            random_state=42,
+            n_jobs=-1
         )
         self.model.fit(features_scaled, labels)
-        
         self.is_trained = True
         
-        # Save model
         self.save_model()
-    
+        logging.info("Model training completed.")
+
     def predict(self, data: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """
         Make predictions on new data
@@ -125,19 +136,20 @@ class MarketPredictor:
         
         return predictions, probabilities
     
-    def get_prediction_signals(self, data: pd.DataFrame) -> List[Dict]:
+    def get_prediction_signals(self, data: pd.DataFrame) -> List[Dict[str, Any]]:
         """
-        Get trading signals based on predictions
-        
+        Get trading signals based on predictions.
+
         Args:
-            data: Market data
-            
+            data (pd.DataFrame): Market data to predict on.
+
         Returns:
-            List of prediction signals
+            List[Dict[str, Any]]: A list of prediction signals.
         """
         if not self.is_trained:
+            logging.warning("Prediction attempted without a trained model.")
             return []
-        
+
         predictions, probabilities = self.predict(data)
         
         signals = []
@@ -146,15 +158,14 @@ class MarketPredictor:
                 signal = {
                     'type': 'ml_prediction',
                     'timestamp': data.index[i],
-                    'prediction': pred,
-                    'confidence': np.max(prob),
+                    'prediction': int(pred),
+                    'confidence': float(np.max(prob)),
                     'direction': self._prediction_to_direction(pred),
-                    'strength': np.max(prob)
                 }
                 signals.append(signal)
         
         return signals
-    
+
     def _prediction_to_direction(self, prediction: int) -> str:
         """Convert prediction to direction"""
         if prediction == 0:
@@ -164,54 +175,34 @@ class MarketPredictor:
         else:
             return 'neutral'
     
-    def _calculate_rsi(self, prices: np.ndarray, period: int = 14) -> np.ndarray:
-        """Calculate RSI"""
-        delta = np.diff(prices)
-        gain = np.where(delta > 0, delta, 0)
-        loss = np.where(delta < 0, -delta, 0)
-        
-        avg_gain = pd.Series(gain).rolling(period).mean()
-        avg_loss = pd.Series(loss).rolling(period).mean()
-        
-        rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
-        
-        return rsi.values
-    
-    def _calculate_macd(self, prices: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """Calculate MACD"""
-        ema12 = pd.Series(prices).ewm(span=12).mean()
-        ema26 = pd.Series(prices).ewm(span=26).mean()
-        
-        macd = ema12 - ema26
-        signal = macd.ewm(span=9).mean()
-        
-        return macd.values, signal.values
-    
-    def _calculate_bollinger_bands(self, prices: np.ndarray, period: int = 20) -> Tuple[np.ndarray, np.ndarray]:
-        """Calculate Bollinger Bands"""
-        sma = pd.Series(prices).rolling(period).mean()
-        std = pd.Series(prices).rolling(period).std()
-        
-        upper_band = sma + (std * 2)
-        lower_band = sma - (std * 2)
-        
-        return upper_band.values, lower_band.values
-    
-    def save_model(self):
-        """Save trained model to disk"""
-        if self.is_trained:
+    def save_model(self) -> None:
+        """Saves the trained model and scaler to disk."""
+        if not self.is_trained or self.model is None:
+            logging.error("Attempted to save a model that is not trained.")
+            return
+
+        try:
             os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
             joblib.dump({
                 'model': self.model,
                 'scaler': self.scaler,
-                'is_trained': self.is_trained
             }, self.model_path)
-    
-    def load_model(self):
-        """Load trained model from disk"""
-        if os.path.exists(self.model_path):
-            saved_data = joblib.load(self.model_path)
-            self.model = saved_data['model']
-            self.scaler = saved_data['scaler']
-            self.is_trained = saved_data['is_trained']
+            logging.info(f"Model saved successfully to {self.model_path}")
+        except Exception as e:
+            logging.error(f"Error saving model: {e}")
+
+    def load_model(self) -> None:
+        """Loads the model and scaler from disk."""
+        try:
+            if os.path.exists(self.model_path):
+                saved_data = joblib.load(self.model_path)
+                self.model = saved_data['model']
+                self.scaler = saved_data['scaler']
+                self.is_trained = True
+                logging.info(f"Model loaded successfully from {self.model_path}")
+            else:
+                logging.warning(f"Model path {self.model_path} does not exist. Model not loaded.")
+        except FileNotFoundError:
+            logging.error(f"Model file not found at {self.model_path}")
+        except Exception as e:
+            logging.error(f"Error loading model: {e}")
