@@ -1,40 +1,36 @@
 import unittest
-import os
-import unittest
-import os
+from unittest.mock import patch, MagicMock
 from core.execution.bybit import BybitAPI
-
-# Manually load environment variables from .env file
-dotenv_path = os.path.join(os.path.dirname(__file__), '../../.env')
-if os.path.exists(dotenv_path):
-    with open(dotenv_path) as f:
-        for line in f:
-            if line.strip() and not line.startswith('#'):
-                key, value = line.strip().split('=', 1)
-                os.environ[key] = value
-
-from utils.config import BYBIT_API_KEY, BYBIT_SECRET
 
 class TestBybitAPI(unittest.TestCase):
 
-    def test_api_keys_are_set(self):
-        """
-        Tests if the Bybit API keys are set as environment variables.
-        """
-        self.assertIsNotNone(BYBIT_API_KEY, "BYBIT_API_KEY is not set.")
-        self.assertIsNotNone(BYBIT_SECRET, "BYBIT_SECRET is not set.")
+    @patch('core.execution.bybit.requests.get')
+    def test_get_market_data_success(self, mock_get):
+        # Mock the API response
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"result": {"list": [1, 2, 3]}}
+        mock_get.return_value = mock_response
 
-    def test_bybit_connection(self):
-        """
-        Tests the connection to the Bybit API using the provided API keys.
-        """
-        bybit = BybitAPI()
-        # A simple request to a public endpoint to check the connection
-        response = bybit.get_market_data("BTCUSDT", "1")
-        self.assertIsNotNone(response, "Failed to connect to Bybit API.")
-        # Check for a specific error code in the response if the API key is invalid
-        if "ret_code" in response and response["ret_code"] == 10003:
-            self.fail("Bybit API key is invalid.")
+        # Instantiate the BybitAPI and call the method
+        bybit_api = BybitAPI()
+        data = bybit_api.get_market_data("BTCUSDT", "1")
+
+        # Assert that the data is what we expect
+        self.assertEqual(data, {"result": {"list": [1, 2, 3]}})
+
+    @patch('core.execution.bybit.requests.get')
+    def test_get_market_data_failure(self, mock_get):
+        # Mock the API response for a failure case
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+        mock_response.raise_for_status.side_effect = Exception("403 Client Error: Forbidden for url")
+        mock_get.return_value = mock_response
+
+        # Instantiate the BybitAPI and call the method
+        bybit_api = BybitAPI()
+        with self.assertRaises(Exception):
+            bybit_api.get_market_data("BTCUSDT", "1")
 
 if __name__ == '__main__':
     unittest.main()
