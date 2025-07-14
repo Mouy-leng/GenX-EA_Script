@@ -48,7 +48,7 @@ class BybitAPI:
             print(f"Error fetching data from Bybit: {e}")
             return None
 
-    def execute_order(self, symbol, side, order_type, qty):
+    def execute_order(self, symbol, side, order_type, qty, stop_loss=None, take_profit=None):
         """
         Executes an order on Bybit.
         """
@@ -60,6 +60,10 @@ class BybitAPI:
             "orderType": order_type,
             "qty": str(qty)
         }
+        if stop_loss:
+            params["stopLoss"] = str(stop_loss)
+        if take_profit:
+            params["takeProfit"] = str(take_profit)
 
         timestamp = int(time.time() * 1000)
         request_body = '&'.join([f'{key}={value}' for key, value in sorted(params.items())])
