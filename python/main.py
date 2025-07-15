@@ -51,6 +51,12 @@ def get_realtime_data(symbol):
 
 if __name__ == "__main__":
     import argparse
+    import threading
+    from core.zeromq import publisher
+
+    # Start the ZeroMQ publisher in a separate thread
+    publisher_thread = threading.Thread(target=publisher.main)
+    publisher_thread.start()
 
     parser = argparse.ArgumentParser(description="Run the trading bot.")
     parser.add_argument("--paper", action="store_true", help="Enable paper trading.")
