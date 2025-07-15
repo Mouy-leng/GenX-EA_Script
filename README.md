@@ -88,4 +88,5 @@ docker-compose up -d
 
 - **Python Service**: The trading logic runs in the background. You can view its logs with `docker-compose logs -f python`.
 - **Backend Server**: Accessible at `http://localhost:3000`.
+- **API Server**: Accessible at `http://localhost:8000` with interactive docs at `http://localhost:8000/docs`.
 - **Frontend Client**: Accessible at `http://localhost:5173`.
