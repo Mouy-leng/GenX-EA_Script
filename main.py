@@ -1,10 +1,6 @@
 import os
-import sys
 import pandas as pd
 import joblib
-
-# Add the project root to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.execution.bybit import BybitAPI
 from core.patterns.pattern_detector import PatternDetector
@@ -20,12 +16,10 @@ def get_realtime_data(symbol):
     market_data = bybit_api.get_market_data(symbol, "60")
 
     if market_data and market_data.get("retCode") == 0 and market_data.get("result", {}).get("list"):
-        # The Bybit API returns data in a nested structure.
-        # We need to extract the kline data and format it for our pattern detection functions.
         kline_data = market_data["result"]["list"]
 
-        # The kline data is returned in reverse chronological order. We need to reverse it.
-        kline_data.reverse()
+        # The kline data is returned in reverse chronological order (newest first). We need to reverse it.
+        kline_data.reverse() # Oldest first
 
         # Create a pandas DataFrame from the data.
         df = pd.DataFrame(kline_data, columns=["timestamp", "open", "high", "low", "close", "volume", "turnover"])
@@ -33,6 +27,11 @@ def get_realtime_data(symbol):
         # Convert the timestamp to a datetime object and set it as the index.
         df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms")
         df.set_index("timestamp", inplace=True)
+
+        # Convert columns to numeric types for calculations
+        numeric_cols = ["open", "high", "low", "close", "volume", "turnover"]
+        for col in numeric_cols:
+            df[col] = pd.to_numeric(df[col])
 
         return df
     else:

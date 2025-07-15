@@ -1,115 +1,91 @@
-# GenZ Trading Platform
+# GenX-EA Script: AI-Powered Trading Bot
 
-A comprehensive AI-powered trading platform with multi-platform support, real-time data processing, automated trading capabilities, and advanced pattern recognition algorithms.
+This project is a comprehensive framework for a trading bot that leverages machine learning to predict market movements and execute trades on the Bybit cryptocurrency exchange. It is containerized using Docker for easy setup and deployment.
 
-## 🚀 Project Status
+## ✨ Features
 
-This project is currently under active development. Here's a summary of the current status:
+- **AI-Powered Predictions**: Uses a pre-trained `scikit-learn` model to predict market trends.
+- **Pattern Recognition**: Detects classic candlestick patterns from market data.
+- **Signal Analysis**: Combines AI predictions and technical patterns to generate trading signals.
+- **Bybit Integration**: Connects directly to the Bybit V5 API for real-time data and order execution.
+- **Containerized**: Fully containerized with Docker and Docker Compose for a consistent development and production environment.
+- **Full-Stack Ready**: Includes services for a frontend (`client`), backend API (`server`), and the core Python trading logic (`python`).
 
-**Completed:**
+## 🛠️ Tech Stack
 
-*   **Project Scaffolding:** The project has a well-organized structure, separating the core logic, services, AI models, and other components.
-*   **Technical Indicators:** A suite of technical indicators has been implemented and tested, including RSI, MACD, and Moving Averages.
-*   **Bybit Integration (Initial):** A module for interacting with the Bybit API has been created. **Note:** There is an ongoing issue with the API key that needs to be resolved to enable real-time data fetching.
-*   **AI Model (Proof of Concept):** A Random Forest Classifier has been trained on sample data to predict market movements. This serves as a proof of concept for the AI-powered features.
-*   **Colab Notebook:** A Colab notebook has been created to demonstrate the core features of the project, including the technical indicators and pattern detection.
+- **Python Service**:
+  - **Python 3.10+**
+  - **Pandas**: For data manipulation and analysis.
+  - **Scikit-learn**: For machine learning predictions.
+  - **Pybit**: For Bybit API communication.
+  - **Docker**: For containerization.
+- **Server**: Node.js (Setup for a backend API, e.g., Express).
+- **Client**: Node.js (Setup for a frontend framework, e.g., React, Vue).
 
-**Next Steps:**
-
-1.  **Resolve Bybit API Key Issue:** The immediate priority is to resolve the `403 Forbidden` error with the Bybit API key to enable real-time data collection.
-2.  **Real-time Data Processing:** Integrate the Bybit API with the main application to process real-time market data.
-3.  **Signal Generation:** Use the AI model's predictions to generate trading signals.
-4.  **Order Execution:** Use the Bybit API to execute trades based on the trading signals.
-5.  **Telegram/Discord Bots:** Implement the Telegram and Discord bots to send notifications.
-6.  **Scheduling:** Set up a scheduler to run the trading bot at regular intervals.
-
-## 📁 Project Structure
+## 📂 Project Structure
 
 ```
-genz-trading-backend/
-├── core/                        # Core logic (pattern detection, signal generation, etc.)
-│   ├── patterns/               # Harmonic, candlestick, etc.
-│   ├── indicators/             # RSI, MACD, MA cross, etc.
-│   ├── strategies/             # Rule-based or ML-based
-│   ├── execution/              # Bybit, MT5, Capital.com trading API integrations
-│   └── risk_management.py
-│
-├── services/                   # Interfaces with outside world
-│   ├── websocket_feed.py       # Real-time market data
-│   ├── telegram_bot.py         # Signal notifications
-│   ├── discord_bot.py
-│   ├── scheduler.py            # Cron jobs / event triggers
-│   └── notifier.py
-│
-├── ai_models/                  # Trained AI models, predictors
-│   ├── market_predictor.py
-│   └── model_utils.py
-│
-├── api/                        # Optional FastAPI REST server
-│   └── main.py                 # Run this to expose AI logic over API
-│
-├── utils/                      # Logging, .env loading, JSON helpers
-│   └── config.py
-│
-├── .env                        # Secrets (API keys, bot tokens, etc.)
-├── requirements.txt
-├── main.py                     # Entry point to run engine manually
-└── README.md
+GenX-EA_Script/
+├── ai_models/            # Stores trained machine learning models
+├── api/                  # FastAPI server logic
+├── client/               # Frontend application code
+├── core/                 # Core Python logic (execution, patterns, strategies)
+├── data/                 # Sample or historical data
+├── server/               # Backend server code (Node.js)
+├── services/             # Service-specific code (e.g., Python main script)
+├── .env                  # (Local) Environment variables (ignored by Git)
+├── .env.example          # Example environment variables
+├── docker-compose.yml    # Defines and runs the multi-container application
+├── Dockerfile            # Builds the Docker images for all services
+└── README.md             # This file
 ```
-
-## 🛠️ Technology Stack
-
-- **Backend**: Python
-- **AI/ML**: scikit-learn, pandas, numpy
-- **API**: FastAPI (optional)
-- **Real-time**: WebSocket connections for live data
 
 ## 🚀 Getting Started
 
+Follow these instructions to get the project up and running on your local machine.
+
 ### Prerequisites
-- Python 3.8+
 
-### Installation
+- Docker and Docker Compose
+- Git
 
-1. **Install Python dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
-   Configure your Bybit API keys and other secrets.
-
-3. **Run the application:**
-   ```bash
-   python main.py
-   ```
-
-## 🐍 Python Services
-
-The Python services handle advanced trading algorithms and pattern recognition:
+### 1. Clone the Repository
 
 ```bash
-# Download historical data
-python scripts/download_data.py
-
-# Generate features
-python scripts/feature_engineering.py
-
-# Train the model
-python scripts/train_model.py
+git clone https://github.com/your-username/GenX-EA_Script.git
+cd GenX-EA_Script
 ```
 
-## 📝 License
+### 2. Configure Environment Variables
 
-This project is proprietary software. All rights reserved.
+The Python service requires Bybit API keys to function.
 
-## 🤝 Contributing
+1.  Copy the example `.env.example` file to a new `.env` file:
+    ```bash
+    cp .env.example .env
+    ```
+2.  Open the `.env` file and add your Bybit API Key and Secret. You can generate these from your Bybit API Management page.
 
-This is a private trading platform. For development questions or feature requests, please contact the development team.
+    ```ini
+    # .env
+    BYBIT_API_KEY="YOUR_API_KEY_HERE"
+    BYBIT_API_SECRET="YOUR_SECRET_KEY_HERE"
+    ```
 
----
+### 3. Build and Run the Application
 
-**Note**: This platform is designed for educational and development purposes. Always conduct thorough testing before using with real trading accounts.
+Use Docker Compose to build the images and start all the services.
+
+```bash
+# Build the images for all services
+docker-compose build
+
+# Start all services in detached mode
+docker-compose up -d
+```
+
+### 4. Accessing the Services
+
+- **Python Service**: The trading logic runs in the background. You can view its logs with `docker-compose logs -f python`.
+- **Backend Server**: Accessible at `http://localhost:3000`.
+- **Frontend Client**: Accessible at `http://localhost:5173`.
