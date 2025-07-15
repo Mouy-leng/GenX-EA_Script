@@ -19,3 +19,8 @@ class CapitalCom:
     def get_open_positions(self):
         # Implementation to get open positions
         pass
+
+    def get_market_data(self, symbol, interval, limit=200, startTime=None):
+        # Implementation to get market data
+        # This is a placeholder and will need to be updated with the correct API call
+        return None

@@ -65,7 +65,7 @@ def download_historical_data(symbol, interval, start_time, end_time):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Download historical market data from Capital.com.")
-    parser.add_argument("--symbol", type=str, default="BTCUSDT", help="The trading symbol (e.g., BTCUSDT).")
+    parser.add_argument("--symbol", type=str, default="GOLD", help="The trading symbol (e.g., GOLD).")
     parser.add_argument("--interval", type=str, default="60", help="The candle interval (e.g., 60 for 1-hour).")
     parser.add_argument("--start", type=str, default="2020-01-01", help="The start date (YYYY-MM-DD).")
     parser.add_argument("--end", type=str, default="2024-01-01", help="The end date (YYYY-MM-DD).")

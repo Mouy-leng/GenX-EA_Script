@@ -11,7 +11,7 @@ from core.patterns.pattern_detector import PatternDetector
 from core.strategies.signal_analyzer import SignalAnalyzer
 from scripts.feature_engineering import create_features
 
-def get_realtime_data(symbol, paper_trading=False):
+def get_realtime_data(symbol):
     """
     Fetches real-time market data from Capital.com.
     """
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     model = joblib.load(model_file_path)
 
     # Get real-time data
-    df = get_realtime_data("BTCUSDT", paper_trading=args.paper)
+    df = get_realtime_data("GOLD")
 
     if df is not None:
         # Create features
