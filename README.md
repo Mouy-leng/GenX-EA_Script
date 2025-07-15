@@ -10,16 +10,15 @@ This project is currently under active development. Here's a summary of the curr
 
 *   **Project Scaffolding:** The project has a well-organized structure, separating the core logic, services, AI models, and other components.
 *   **Technical Indicators:** A suite of technical indicators has been implemented and tested, including RSI, MACD, and Moving Averages.
-*   **Bybit Integration (Initial):** A module for interacting with the Bybit API has been created. **Note:** There is an ongoing issue with the API key that needs to be resolved to enable real-time data fetching.
+*   **Capital.com Integration (Initial):** A module for interacting with the Capital.com API has been created.
 *   **AI Model (Proof of Concept):** A Random Forest Classifier has been trained on sample data to predict market movements. This serves as a proof of concept for the AI-powered features.
 *   **Colab Notebook:** A Colab notebook has been created to demonstrate the core features of the project, including the technical indicators and pattern detection.
 
 **Next Steps:**
 
-1.  **Resolve Bybit API Key Issue:** The immediate priority is to resolve the `403 Forbidden` error with the Bybit API key to enable real-time data collection.
-2.  **Real-time Data Processing:** Integrate the Bybit API with the main application to process real-time market data.
-3.  **Signal Generation:** Use the AI model's predictions to generate trading signals.
-4.  **Order Execution:** Use the Bybit API to execute trades based on the trading signals.
+1.  **Real-time Data Processing:** Integrate the Capital.com API with the main application to process real-time market data.
+2.  **Signal Generation:** Use the AI model's predictions to generate trading signals.
+3.  **Order Execution:** Use the Capital.com API to execute trades based on the trading signals.
 5.  **Telegram/Discord Bots:** Implement the Telegram and Discord bots to send notifications.
 6.  **Scheduling:** Set up a scheduler to run the trading bot at regular intervals.
 
@@ -31,7 +30,7 @@ genz-trading-backend/
 │   ├── patterns/               # Harmonic, candlestick, etc.
 │   ├── indicators/             # RSI, MACD, MA cross, etc.
 │   ├── strategies/             # Rule-based or ML-based
-│   ├── execution/              # Bybit, MT5, Capital.com trading API integrations
+│   ├── execution/              # MT5, Capital.com trading API integrations
 │   └── risk_management.py
 │
 ├── services/                   # Interfaces with outside world
@@ -80,7 +79,7 @@ genz-trading-backend/
    ```bash
    cp .env.example .env
    ```
-   Configure your Bybit API keys and other secrets.
+   Configure your Capital.com API keys and other secrets.
 
 3. **Run the application:**
    ```bash

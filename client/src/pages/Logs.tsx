@@ -97,7 +97,7 @@ export default function Logs() {
 
   const getServiceBadgeColor = (service: string) => {
     switch (service) {
-      case 'bybit':
+      case 'capital.com':
         return 'bg-blue-500/20 text-blue-500';
       case 'discord':
         return 'bg-purple-500/20 text-purple-500';
@@ -113,7 +113,7 @@ export default function Logs() {
   };
 
   const logLevels = ['ALL', 'INFO', 'WARN', 'ERROR', 'DEBUG'];
-  const services = ['ALL', 'bybit', 'discord', 'telegram', 'mt45', 'ai'];
+  const services = ['ALL', 'capital.com', 'discord', 'telegram', 'mt45', 'ai'];
 
   const logCounts = {
     total: logs.length,

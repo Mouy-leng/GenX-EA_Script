@@ -25,7 +25,7 @@ async function seed() {
     // Create demo trading account
     await db.insert(tradingAccounts).values({
       userId: user.id,
-      platform: 'bybit',
+      platform: 'capital.com',
       accountId: 'demo_account_123',
       accountName: 'Demo Trading Account',
       balance: '10000.00',

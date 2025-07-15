@@ -6,23 +6,23 @@ import joblib
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.execution.bybit import BybitAPI
+from core.execution.capital import CapitalCom
 from core.patterns.pattern_detector import PatternDetector
 from core.strategies.signal_analyzer import SignalAnalyzer
 from scripts.feature_engineering import create_features
 
 def get_realtime_data(symbol, paper_trading=False):
     """
-    Fetches real-time market data from Bybit.
+    Fetches real-time market data from Capital.com.
     """
-    bybit_api = BybitAPI(paper_trading=paper_trading)
+    capital_com_api = CapitalCom()
     # Fetch 1-hour kline data for the last 200 hours
-    market_data = bybit_api.get_market_data(symbol, "60")
+    market_data = capital_com_api.get_market_data(symbol, "60")
 
-    if market_data and market_data.get("retCode") == 0 and market_data.get("result", {}).get("list"):
-        # The Bybit API returns data in a nested structure.
+    if market_data:
+        # The Capital.com API returns data in a nested structure.
         # We need to extract the kline data and format it for our pattern detection functions.
-        kline_data = market_data["result"]["list"]
+        kline_data = market_data
 
         # The kline data is returned in reverse chronological order. We need to reverse it.
         kline_data.reverse()

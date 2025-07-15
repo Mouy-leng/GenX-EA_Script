@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Activity, Wifi, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function BybitIntegration() {
+export default function CapitalComIntegration() {
   const { data: healthData, refetch } = useQuery({
     queryKey: ['/api/health'],
     refetchInterval: 10000,
@@ -17,12 +17,12 @@ export default function BybitIntegration() {
     refetchInterval: 5000,
   });
 
-  const isConnected = healthData?.services?.bybit;
+  const isConnected = healthData?.services?.['capital.com'];
 
   return (
     <div className="flex-1 overflow-auto">
       <Header
-        title="Bybit Integration"
+        title="Capital.com Integration"
         subtitle="Real-time cryptocurrency data and WebSocket connections"
       />
       
@@ -85,18 +85,18 @@ export default function BybitIntegration() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">WebSocket URL</label>
-                  <p className="text-sm text-muted-foreground">wss://stream.bybit.com/v5/public/spot</p>
+                  <p className="text-sm text-muted-foreground">wss://api-streaming.capital.com/connect</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">API Base URL</label>
-                  <p className="text-sm text-muted-foreground">https://api.bybit.com</p>
+                  <p className="text-sm text-muted-foreground">https://api-capital.com</p>
                 </div>
               </div>
               
               <div>
                 <label className="text-sm font-medium">Subscribed Symbols</label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {['BTCUSDT', 'ETHUSDT', 'ADAUSDT', 'SOLUSDT', 'BNBUSDT'].map(symbol => (
+                  {['BTCUSD', 'ETHUSD', 'ADAUSD', 'SOLUSD', 'BNBUSD'].map(symbol => (
                     <Badge key={symbol} variant="secondary">{symbol}</Badge>
                   ))}
                 </div>

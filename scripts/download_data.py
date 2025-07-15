@@ -7,7 +7,7 @@ from datetime import datetime
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.execution.bybit import BybitAPI
+from core.execution.capital import CapitalCom
 
 def clean_data(df):
     """
@@ -27,24 +27,24 @@ def clean_data(df):
 
 def download_historical_data(symbol, interval, start_time, end_time):
     """
-    Downloads historical market data from Bybit and saves it to a CSV file.
+    Downloads historical market data from Capital.com and saves it to a CSV file.
     """
-    bybit_api = BybitAPI()
+    capital_com_api = CapitalCom()
     all_data = []
 
     current_time = start_time
     while current_time < end_time:
         try:
-            data = bybit_api.get_market_data(symbol, interval, limit=1000, startTime=current_time)
-            if data and data.get("retCode") == 0 and data.get("result", {}).get("list"):
-                kline_data = data["result"]["list"]
+            data = capital_com_api.get_market_data(symbol, interval, limit=1000, startTime=current_time)
+            if data:
+                kline_data = data
                 all_data.extend(kline_data)
                 last_timestamp = int(kline_data[-1][0])
                 if last_timestamp >= end_time:
                     break
                 current_time = last_timestamp
             else:
-                print(f"Error fetching data: {data.get('retMsg', 'Unknown error')}")
+                print(f"Error fetching data: No data returned")
                 break
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -64,7 +64,7 @@ def download_historical_data(symbol, interval, start_time, end_time):
         print("No data downloaded.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Download historical market data from Bybit.")
+    parser = argparse.ArgumentParser(description="Download historical market data from Capital.com.")
     parser.add_argument("--symbol", type=str, default="BTCUSDT", help="The trading symbol (e.g., BTCUSDT).")
     parser.add_argument("--interval", type=str, default="60", help="The candle interval (e.g., 60 for 1-hour).")
     parser.add_argument("--start", type=str, default="2020-01-01", help="The start date (YYYY-MM-DD).")

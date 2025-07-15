@@ -6,7 +6,7 @@
 ### Environment Setup
 - [ ] Set up environment variables in Replit Secrets
 - [ ] Configure DATABASE_URL (Neon PostgreSQL)
-- [ ] Set API keys (OpenAI, Bybit, Discord, Telegram)
+- [ ] Set API keys (OpenAI, Capital.com, Discord, Telegram)
 - [ ] Set NODE_ENV=production
 
 ### Database Setup
