@@ -5,6 +5,8 @@ import requests
 from utils.config import BYBIT_API_KEY, BYBIT_SECRET
 
 class BybitAPI:
+    RECV_WINDOW = "5000"
+
     def __init__(self):
         self.api_key = BYBIT_API_KEY
         self.api_secret = BYBIT_SECRET
@@ -13,7 +15,7 @@ class BybitAPI:
     def _generate_signature(self, timestamp, payload):
         if not self.api_key or not self.api_secret:
             return ""
-        param_str = str(timestamp) + self.api_key + "5000" + payload
+        param_str = str(timestamp) + self.api_key + self.RECV_WINDOW + payload
         return hmac.new(self.api_secret.encode('utf-8'), param_str.encode('utf-8'), hashlib.sha256).hexdigest()
 
     def get_market_data(self, symbol, interval, limit=200, **kwargs):
@@ -36,7 +38,7 @@ class BybitAPI:
         headers = {
             "X-BAPI-API-KEY": self.api_key,
             "X-BAPI-TIMESTAMP": str(timestamp),
-            "X-BAPI-RECV-WINDOW": "5000",
+            "X-BAPI-RECV-WINDOW": self.RECV_WINDOW,
             "X-BAPI-SIGN": signature
         }
 
