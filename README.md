@@ -47,6 +47,11 @@ genz-trading-backend/
 ├── api/                        # Optional FastAPI REST server
 │   └── main.py                 # Run this to expose AI logic over API
 │
+├── scripts/
+│   ├── download_data.py
+│   ├── feature_engineering.py
+│   └── train_model.py
+│
 ├── utils/                      # Logging, .env loading, JSON helpers
 │   └── config.py
 │

@@ -6,23 +6,23 @@ import joblib
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.execution.capital import CapitalCom
+from core.execution.bybit import BybitAPI
 from core.patterns.pattern_detector import PatternDetector
 from core.strategies.signal_analyzer import SignalAnalyzer
 from scripts.feature_engineering import create_features
 
-def get_realtime_data(symbol):
+def get_realtime_data(symbol, paper_trading=False):
     """
-    Fetches real-time market data from Capital.com.
+    Fetches real-time market data from Bybit.
     """
-    capital_com_api = CapitalCom()
+    bybit_api = BybitAPI(paper_trading=paper_trading)
     # Fetch 1-hour kline data for the last 200 hours
-    market_data = capital_com_api.get_market_data(symbol, "60")
+    market_data = bybit_api.get_market_data(symbol, "60")
 
-    if market_data:
-        # The Capital.com API returns data in a nested structure.
+    if market_data and market_data.get("retCode") == 0 and market_data.get("result", {}).get("list"):
+        # The Bybit API returns data in a nested structure.
         # We need to extract the kline data and format it for our pattern detection functions.
-        kline_data = market_data
+        kline_data = market_data["result"]["list"]
 
         # The kline data is returned in reverse chronological order. We need to reverse it.
         kline_data.reverse()
@@ -51,12 +51,6 @@ def get_realtime_data(symbol):
 
 if __name__ == "__main__":
     import argparse
-    import threading
-    from core.zeromq import publisher
-
-    # Start the ZeroMQ publisher in a separate thread
-    publisher_thread = threading.Thread(target=publisher.main)
-    publisher_thread.start()
 
     parser = argparse.ArgumentParser(description="Run the trading bot.")
     parser.add_argument("--paper", action="store_true", help="Enable paper trading.")
@@ -68,7 +62,7 @@ if __name__ == "__main__":
     model = joblib.load(model_file_path)
 
     # Get real-time data
-    df = get_realtime_data("GOLD")
+    df = get_realtime_data("BTCUSDT", paper_trading=args.paper)
 
     if df is not None:
         # Create features
