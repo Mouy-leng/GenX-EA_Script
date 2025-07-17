@@ -9,7 +9,7 @@ This project is a comprehensive framework for a trading bot that leverages machi
 - **Signal Analysis**: Combines AI predictions and technical patterns to generate trading signals.
 - **Bybit Integration**: Connects directly to the Bybit V5 API for real-time data and order execution.
 - **Containerized**: Fully containerized with Docker and Docker Compose for a consistent development and production environment.
-- **Full-Stack Ready**: Includes services for a frontend (`client`), backend API (`server`), and the core Python trading logic (`python`).
+- **Backend Focused**: Includes a backend API (`server`), and the core Python trading logic (`python`).
 
 ## 🛠️ Tech Stack
 
@@ -20,7 +20,6 @@ This project is a comprehensive framework for a trading bot that leverages machi
   - **Pybit**: For Bybit API communication.
   - **Docker**: For containerization.
 - **Server**: Node.js (Setup for a backend API, e.g., Express).
-- **Client**: Node.js (Setup for a frontend framework, e.g., React, Vue).
 
 ## 📂 Project Structure
 
@@ -28,7 +27,6 @@ This project is a comprehensive framework for a trading bot that leverages machi
 GenX-EA_Script/
 ├── ai_models/            # Stores trained machine learning models
 ├── api/                  # FastAPI server logic
-├── client/               # Frontend application code
 ├── core/                 # Core Python logic (execution, patterns, strategies)
 ├── data/                 # Sample or historical data
 ├── server/               # Backend server code (Node.js)
@@ -89,7 +87,6 @@ docker-compose up -d
 - **Python Service**: The trading logic runs in the background. You can view its logs with `docker-compose logs -f python`.
 - **Backend Server**: Accessible at `http://localhost:3000`.
 - **API Server**: Accessible at `http://localhost:8000` with interactive docs at `http://localhost:8000/docs`.
-- **Frontend Client**: Accessible at `http://localhost:5173`.
 
 ## Deployment
 
@@ -117,7 +114,7 @@ This project is designed to be deployed using Docker and Docker Compose.
    docker-compose up -d --build
    ```
 
-The application will be available at your domain. The API will be at `api.yourdomain.com` and the client will be at `yourdomain.com`.
+The application will be available at your domain. The API will be at `api.yourdomain.com`.
 
 ### Systemd Service
 
