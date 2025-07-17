@@ -90,3 +90,60 @@ docker-compose up -d
 - **Backend Server**: Accessible at `http://localhost:3000`.
 - **API Server**: Accessible at `http://localhost:8000` with interactive docs at `http://localhost:8000/docs`.
 - **Frontend Client**: Accessible at `http://localhost:5173`.
+
+## Deployment
+
+This project is designed to be deployed using Docker and Docker Compose.
+
+### Prerequisites
+
+- Docker
+- Docker Compose
+
+### Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Mouy-leng/GenX-EA_Script.git
+   cd GenX-EA_Script
+   ```
+2. Create a `.env` file from the example:
+   ```bash
+   cp .env.example .env
+   ```
+3. Edit the `.env` file with your credentials and domain information.
+4. Build and run the services:
+   ```bash
+   docker-compose up -d --build
+   ```
+
+The application will be available at your domain. The API will be at `api.yourdomain.com` and the client will be at `yourdomain.com`.
+
+### Systemd Service
+
+A systemd service file is provided to ensure the application starts on boot. To use it:
+
+1. Copy the `genx-ea.service` file to `/etc/systemd/system/`:
+   ```bash
+   sudo cp genx-ea.service /etc/systemd/system/
+   ```
+2. Reload the systemd daemon:
+   ```bash
+   sudo systemctl daemon-reload
+   ```
+3. Enable the service:
+   ```bash
+   sudo systemctl enable genx-ea.service
+   ```
+4. Start the service:
+   ```bash
+   sudo systemctl start genx-ea.service
+   ```
+
+### CI/CD
+
+This project uses GitHub Actions for CI/CD. Pushes to the `main` branch will automatically trigger a deployment to the DigitalOcean Droplet. You will need to configure the following secrets in your GitHub repository:
+
+- `DROPLET_IP`: The IP address of your DigitalOcean Droplet.
+- `DROPLET_USERNAME`: The username to use for SSH access.
+- `DROPLET_SSH_KEY`: The private SSH key for password-less login.
