@@ -9,6 +9,10 @@
   </a>
 </div>
 
+[![Open in VS Code](https://open.vscode.dev/badges/open-in-vscode.svg)](https://open.vscode.dev/Mouy-leng/GenX-EA_Script)
+
+[![Open in VS Code Insiders](https://open.vscode.dev/badges/open-in-vscode-insiders.svg)](https://open.vscode.dev/Mouy-leng/GenX-EA_Script)
+
 [![GitHub License](https://img.shields.io/github/license/Mouy-leng/GenX-EA_Script)](https://github.com/Mouy-leng/GenX-EA_Script/blob/main/LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
 [![Python](https://img.shields.io/badge/Python-3.11+-green)](https://www.python.org/)
